@@ -3,6 +3,7 @@ package jwt
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -35,7 +36,7 @@ func ParseTokenFromRequestWithJWKS(r *http.Request, jwksEndpoint string) (jwt.To
 	}
 
 	// ensures that we verify essential claims, like expiration, not before, etc
-	err = jwt.Validate(token)
+	err = jwt.Validate(token, jwt.WithAcceptableSkew(60*time.Second))
 	if err != nil {
 		return nil, errors.Wrap(err, "ParseTokenFromHeaderWithJWKS():jwt.Verify()")
 	}
