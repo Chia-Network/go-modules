@@ -3,7 +3,7 @@ module github.com/chia-network/go-modules
 go 1.19
 
 require (
-	github.com/lestrrat-go/jwx v1.2.27
+	github.com/lestrrat-go/jwx v1.2.28
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.18.0
 )
