@@ -16,15 +16,15 @@ import (
 
 // MultiPartUploadInput holds the inputs for a multipart upload
 type MultiPartUploadInput struct {
-	Ctx               context.Context
-	CtxTimeout        time.Duration // The request will time out after this duration (defaults to 60 minutes)
-	MaxConcurrent     int           // The number of concurrent part uploads (defaults to 10)
-	PartSize          int64         // Number of bytes
-	Svc               *s3.S3        // An AWS S3 session service for the upload
-	Filepath          string        // A full path to a local file to PUT to S3
-	DestinationBucket string        // The destination S3 bucket's name
-	DestinationKey    string        // The destination path (or 'key' since S3 is a key-value object storage) in the bucket the
-	Logger            *slog.Logger  // Handles logging if supplied
+	Svc               *s3.S3          // Required: An AWS S3 session service for the upload
+	Ctx               context.Context // Required: The context for this request
+	CtxTimeout        time.Duration   // Optional: The request will time out after this duration (defaults to 60 minutes)
+	MaxConcurrent     int             // Optional: The number of concurrent part uploads (defaults to 10)
+	PartSize          int64           // Optional: Number of bytes (defaults to 8MB)
+	Filepath          string          // Required: A full path to a local file to PUT to S3
+	DestinationBucket string          // Required: The destination S3 bucket's name
+	DestinationKey    string          // Required: The destination path in the bucket to put the file
+	Logger            *slog.Logger    // Optional: Handles logging if supplied
 }
 
 // MultiPartUploadResult holds the result for an individual part upload
@@ -35,6 +35,10 @@ type MultiPartUploadResult struct {
 
 // MultiPartUpload uploads a local file in multiple parts to AWS S3
 func MultiPartUpload(input MultiPartUploadInput) error {
+	// Exit if no S3 service given
+	if input.Svc == nil {
+		return fmt.Errorf("s3 service nil -- is a required option")
+	}
 	// Set part size to default 8MB if no part size specified or less than 5MB
 	if input.PartSize < 5242880 {
 		input.PartSize = 8 * 1024 * 1024
