@@ -14,8 +14,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
-// MultiPartCopyInput holds the inputs for a multipart upload
-type MultiPartCopyInput struct {
+// MultiPartUploadInput holds the inputs for a multipart upload
+type MultiPartUploadInput struct {
 	Ctx               context.Context
 	CtxTimeout        time.Duration // The request will time out after this duration (defaults to 60 minutes)
 	MaxConcurrent     int           // The number of concurrent part uploads (defaults to 10)
@@ -27,14 +27,14 @@ type MultiPartCopyInput struct {
 	Logger            *slog.Logger  // Handles logging if supplied
 }
 
-// MultiPartCopyResult holds the result for an individual part upload
-type MultiPartCopyResult struct {
+// MultiPartUploadResult holds the result for an individual part upload
+type MultiPartUploadResult struct {
 	Error error
 	Part  *s3.CompletedPart
 }
 
-// MultiPartCopy uploads a local file in multiple parts to AWS S3
-func MultiPartCopy(input MultiPartCopyInput) error {
+// MultiPartUpload uploads a local file in multiple parts to AWS S3
+func MultiPartUpload(input MultiPartUploadInput) error {
 	// Set part size to default 8MB if no part size specified or less than 5MB
 	if input.PartSize < 5242880 {
 		input.PartSize = 8 * 1024 * 1024
