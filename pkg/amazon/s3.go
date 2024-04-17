@@ -60,7 +60,9 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	defer func() {
 		err := file.Close()
 		if err != nil {
-			input.Logger.Error("encountered error closing file", "path", input.Filepath)
+			if input.Logger != nil {
+				input.Logger.Error("encountered error closing file", "path", input.Filepath)
+			}
 		}
 	}()
 
