@@ -43,9 +43,9 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	if input.MaxConcurrent < 1 {
 		input.MaxConcurrent = 10
 	}
-	// Set timeout to 10 minutes if not specified or zero value
+	// Set timeout to 60 minutes if not specified or zero value
 	if input.CtxTimeout == 0 {
-		input.CtxTimeout = 10 * time.Minute
+		input.CtxTimeout = 60 * time.Minute
 	}
 
 	// Set up context with timeout
