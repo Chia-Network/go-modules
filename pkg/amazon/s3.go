@@ -99,7 +99,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	}
 
 	// Get the total number of parts we will upload
-	numParts := fileSize/input.PartSize + 1
+	numParts := getTotalNumberParts(fileSize, input.PartSize)
 	if input.Logger != nil {
 		input.Logger.Debug("will upload file in parts", "file", input.Filepath, "parts", numParts)
 	}
@@ -192,4 +192,11 @@ func min(a, b int64) int64 {
 		return a
 	}
 	return b
+}
+
+func getTotalNumberParts(filesize int64, partsize int64) int64 {
+	if filesize%partsize == 0 {
+		return filesize / partsize
+	}
+	return filesize/partsize + 1
 }
