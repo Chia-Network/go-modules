@@ -13,13 +13,13 @@ import "github.com/chia-network/go-modules/pkg/slogs"
 
 func main() {
 	// Init the logger with a log-level string (debug, info, warn, error)
-	// defaults to "info" if empty or unsupported string
-    slogs.Init("info")
+	// defaults to "info" if empty or unsupported string 
+	slogs.Init("info")
 	
 	// Logs a hello world message at the info level
 	slogs.Logger.Info("hello world")
 	
-	// Logs an error message at the error level
+	// Logs an error message at the error level 
 	slogs.Logger.Error("we received an error")
 }
 ```
