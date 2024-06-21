@@ -7,12 +7,17 @@ import (
 	"strings"
 )
 
-// Logger is a custom text logger from the stdlib slog package
-var Logger *slog.Logger
+// Logr is a custom text logger from the stdlib slog package
+var Logr Logger
+
+// Logger is a wrapper around the slog logger struct so we can have a type that is owned by this scope to create additional wrapper functions around
+type Logger struct {
+	*slog.Logger
+}
 
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
 func Init(level string) {
-	Logger = slog.New(
+	l := slog.New(
 		slog.NewTextHandler(
 			os.Stdout,
 			&slog.HandlerOptions{
@@ -20,6 +25,7 @@ func Init(level string) {
 			},
 		),
 	)
+	Logr = Logger{l}
 }
 
 // Function to convert log level string to slog.Level
@@ -37,4 +43,11 @@ func parseLogLevel(level string) slog.Level {
 		log.Printf("unknown log level specified \"%s\", defaulting to info level", level)
 		return slog.LevelInfo
 	}
+}
+
+// Fatal is a wrapper around the standard slog Error function that exits 1 after it is called.
+// Similar to the stdlib log.Fatal function
+func (l Logger) Fatal(msg string, args ...any) {
+	l.Error(msg, args...)
+	os.Exit(1)
 }

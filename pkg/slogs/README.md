@@ -17,10 +17,10 @@ func main() {
 	slogs.Init("info")
 	
 	// Logs a hello world message at the info level
-	slogs.Logger.Info("hello world")
+	slogs.Logr.Info("hello world")
 	
 	// Logs an error message at the error level 
-	slogs.Logger.Error("we received an error")
+	slogs.Logr.Error("we received an error")
 }
 ```
 
