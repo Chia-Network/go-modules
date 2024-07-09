@@ -3,7 +3,7 @@ module github.com/chia-network/go-modules
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go v1.54.12
+	github.com/aws/aws-sdk-go v1.54.16
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.19.1
