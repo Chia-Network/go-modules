@@ -117,19 +117,20 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 		offset := i * input.PartSize
 		bytesToRead := min(input.PartSize, fileSize-offset)
 
-		partBuffer := make([]byte, bytesToRead)
-		_, err := file.ReadAt(partBuffer, offset)
-		if err != nil {
-			return err
-		}
-
 		wg.Add(1)
-		go func(partNumber int64, partBuffer []byte) {
+		go func(partNumber int64, bytesToRead int64, offset int64) {
 			sem <- struct{}{}
 			defer func() {
 				<-sem
 			}()
 			defer wg.Done()
+
+			partBuffer := make([]byte, bytesToRead)
+			_, err := file.ReadAt(partBuffer, offset)
+			if err != nil {
+				ch <- err
+				return
+			}
 
 			if input.Logger != nil {
 				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", len(partBuffer))
@@ -156,7 +157,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			if input.Logger != nil {
 				input.Logger.Debug("finished uploading file part", "file", input.Filepath, "part", partNumber, "size", len(partBuffer))
 			}
-		}(partNumber, partBuffer)
+		}(partNumber, bytesToRead, offset)
 	}
 
 	wg.Wait()
