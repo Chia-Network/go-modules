@@ -167,6 +167,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 		// No errors
 	}
 	close(ch)
+	close(sem)
 
 	// Make a final call to AWS to say the file upload is complete
 	// The file won't show up in S3 unless this is called
