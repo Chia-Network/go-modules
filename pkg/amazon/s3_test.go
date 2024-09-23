@@ -6,7 +6,7 @@ func TestGetTotalNumberParts(t *testing.T) {
 	tests := []struct {
 		FileSize int64
 		PartSize int64
-		Expected int64
+		Expected int32
 	}{
 		{5, 2, 3}, // Test quotient where division produced a non-whole number
 		{2, 1, 2}, // Test quotient where division produced a whole number

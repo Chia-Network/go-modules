@@ -10,13 +10,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // MultiPartUploadInput holds the inputs for a multipart upload
 type MultiPartUploadInput struct {
-	Svc               *s3.S3          // Required: An AWS S3 session service for the upload
+	Svc               *s3.Client      // Required: An AWS S3 session service for the upload
 	Ctx               context.Context // Required: The context for this request
 	CtxTimeout        time.Duration   // Optional: The request will time out after this duration (defaults to 60 minutes)
 	MaxConcurrent     int             // Optional: The number of concurrent part uploads (defaults to 10)
@@ -30,7 +31,7 @@ type MultiPartUploadInput struct {
 // MultiPartUploadResult holds the result for an individual part upload
 type MultiPartUploadResult struct {
 	Error error
-	Part  *s3.CompletedPart
+	Part  *types.CompletedPart
 }
 
 // MultiPartUpload uploads a local file in multiple parts to AWS S3
@@ -83,7 +84,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	}
 
 	// Initialize a multipart upload and get an upload ID back
-	multipartUpload, err := input.Svc.CreateMultipartUploadWithContext(ctx, &s3.CreateMultipartUploadInput{
+	multipartUpload, err := input.Svc.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
 		Bucket: &input.DestinationBucket,
 		Key:    &input.DestinationKey,
 	})
@@ -117,14 +118,14 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	)
 
 	// Start the individual part uploads
-	orderedParts := make([]*s3.CompletedPart, numParts)
-	for i := int64(0); i < numParts; i++ {
+	orderedParts := make([]types.CompletedPart, numParts)
+	for i := int32(0); i < numParts; i++ {
 		partNumber := i + 1
-		offset := i * partSize
+		offset := int64(i) * partSize
 		bytesToRead := min(partSize, fileSize-offset)
 
 		wg.Add(1)
-		go func(partNumber int64, bytesToRead int64, offset int64) {
+		go func(partNumber int32, bytesToRead int64, offset int64) {
 			sem <- struct{}{}
 			defer func() {
 				<-sem
@@ -149,11 +150,11 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", bytesToRead)
 			}
 
-			resp, err := input.Svc.UploadPart(&s3.UploadPartInput{
+			resp, err := input.Svc.UploadPart(context.TODO(), &s3.UploadPartInput{
 				Bucket:     aws.String(input.DestinationBucket),
 				Key:        aws.String(input.DestinationKey),
 				UploadId:   &uploadID,
-				PartNumber: aws.Int64(partNumber),
+				PartNumber: aws.Int32(partNumber),
 				Body:       partReader,
 			})
 			if err != nil {
@@ -162,9 +163,9 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			}
 
 			// Store the completed part in the uploadParts slice
-			orderedParts[partNumber-1] = &s3.CompletedPart{
+			orderedParts[partNumber-1] = types.CompletedPart{
 				ETag:       aws.String(*resp.ETag),
-				PartNumber: aws.Int64(partNumber),
+				PartNumber: aws.Int32(partNumber),
 			}
 
 			if input.Logger != nil {
@@ -188,11 +189,11 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 
 	// Make a final call to AWS to say the file upload is complete
 	// The file won't show up in S3 unless this is called
-	_, err = input.Svc.CompleteMultipartUpload(&s3.CompleteMultipartUploadInput{
+	_, err = input.Svc.CompleteMultipartUpload(context.TODO(), &s3.CompleteMultipartUploadInput{
 		Bucket:   &input.DestinationBucket,
 		Key:      &input.DestinationKey,
 		UploadId: &uploadID,
-		MultipartUpload: &s3.CompletedMultipartUpload{
+		MultipartUpload: &types.CompletedMultipartUpload{
 			Parts: orderedParts,
 		},
 	})
@@ -203,27 +204,20 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	return nil
 }
 
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func getTotalNumberParts(filesize int64, partsize int64) int64 {
+func getTotalNumberParts(filesize int64, partsize int64) int32 {
 	if filesize%partsize == 0 {
-		return min(10000, filesize/partsize)
+		return min(10000, int32(filesize/partsize))
 	}
-	return min(10000, filesize/partsize+1)
+	return min(10000, int32(filesize/partsize+1))
 }
 
-func getPartSize(filesize int64, numParts int64, defaultPartSize int64) int64 {
+func getPartSize(filesize int64, numParts int32, defaultPartSize int64) int64 {
 	if numParts < 10000 {
 		return defaultPartSize
 	}
-	if filesize%numParts == 0 {
-		return filesize / numParts
+	if filesize%int64(numParts) == 0 {
+		return filesize / int64(numParts)
 	}
 	// numParts-1 to account for any rounding (makes the parts slightly larger)
-	return filesize / (numParts - 1)
+	return filesize / int64(numParts-1)
 }
