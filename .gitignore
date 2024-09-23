@@ -1,3 +1,5 @@
 main
 /bin/
 .idea
+main.go
+profiles

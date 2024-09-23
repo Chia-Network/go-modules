@@ -146,7 +146,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 
 			// Store the completed part in the uploadParts slice
 			orderedParts[partNumber-1] = &s3.CompletedPart{
-				ETag:       resp.ETag,
+				ETag:       aws.String(*resp.ETag),
 				PartNumber: aws.Int64(partNumber),
 			}
 
