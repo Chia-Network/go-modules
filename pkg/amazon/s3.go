@@ -1,10 +1,10 @@
 package amazon
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sync"
@@ -125,12 +125,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			}()
 			defer wg.Done()
 
-			partBuffer := make([]byte, bytesToRead)
-			_, err := file.ReadAt(partBuffer, offset)
-			if err != nil {
-				ch <- err
-				return
-			}
+			partReader := io.NewSectionReader(file, offset, bytesToRead)
 
 			if input.Logger != nil {
 				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", len(partBuffer))
@@ -141,7 +136,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 				Key:        aws.String(input.DestinationKey),
 				UploadId:   &uploadID,
 				PartNumber: aws.Int64(partNumber),
-				Body:       bytes.NewReader(partBuffer),
+				Body:       partReader,
 			})
 			if err != nil {
 				ch <- fmt.Errorf("error uploading part %d : %w", partNumber, err)
