@@ -1,10 +1,10 @@
 package amazon
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"sync"
@@ -100,8 +100,9 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 
 	// Get the total number of parts we will upload
 	numParts := getTotalNumberParts(fileSize, input.PartSize)
+	partSize := getPartSize(fileSize, numParts, input.PartSize)
 	if input.Logger != nil {
-		input.Logger.Debug("will upload file in parts", "file", input.Filepath, "parts", numParts)
+		input.Logger.Debug("will upload file in parts", "file", input.Filepath, "parts", numParts, "partSize", partSize, "fileSize", fileSize)
 	}
 
 	var (
@@ -114,8 +115,8 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	orderedParts := make([]*s3.CompletedPart, numParts)
 	for i := int64(0); i < numParts; i++ {
 		partNumber := i + 1
-		offset := i * input.PartSize
-		bytesToRead := min(input.PartSize, fileSize-offset)
+		offset := i * partSize
+		bytesToRead := min(partSize, fileSize-offset)
 
 		wg.Add(1)
 		go func(partNumber int64, bytesToRead int64, offset int64) {
@@ -125,15 +126,10 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			}()
 			defer wg.Done()
 
-			partBuffer := make([]byte, bytesToRead)
-			_, err := file.ReadAt(partBuffer, offset)
-			if err != nil {
-				ch <- err
-				return
-			}
+			partReader := io.NewSectionReader(file, offset, bytesToRead)
 
 			if input.Logger != nil {
-				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", len(partBuffer))
+				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", bytesToRead)
 			}
 
 			resp, err := input.Svc.UploadPart(&s3.UploadPartInput{
@@ -141,7 +137,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 				Key:        aws.String(input.DestinationKey),
 				UploadId:   &uploadID,
 				PartNumber: aws.Int64(partNumber),
-				Body:       bytes.NewReader(partBuffer),
+				Body:       partReader,
 			})
 			if err != nil {
 				ch <- fmt.Errorf("error uploading part %d : %w", partNumber, err)
@@ -155,7 +151,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			}
 
 			if input.Logger != nil {
-				input.Logger.Debug("finished uploading file part", "file", input.Filepath, "part", partNumber, "size", len(partBuffer))
+				input.Logger.Debug("finished uploading file part", "file", input.Filepath, "part", partNumber, "size", bytesToRead)
 			}
 		}(partNumber, bytesToRead, offset)
 	}
@@ -197,7 +193,18 @@ func min(a, b int64) int64 {
 
 func getTotalNumberParts(filesize int64, partsize int64) int64 {
 	if filesize%partsize == 0 {
-		return filesize / partsize
+		return min(10000, filesize/partsize)
 	}
-	return filesize/partsize + 1
+	return min(10000, filesize/partsize+1)
+}
+
+func getPartSize(filesize int64, numParts int64, defaultPartSize int64) int64 {
+	if numParts < 10000 {
+		return defaultPartSize
+	}
+	if filesize%numParts == 0 {
+		return filesize / numParts
+	}
+	// numParts-1 to account for any rounding (makes the parts slightly larger)
+	return filesize / (numParts - 1)
 }
