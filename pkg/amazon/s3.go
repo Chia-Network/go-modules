@@ -153,6 +153,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			if input.Logger != nil {
 				input.Logger.Debug("finished uploading file part", "file", input.Filepath, "part", partNumber, "size", bytesToRead)
 			}
+			partReader = nil
 		}(partNumber, bytesToRead, offset)
 	}
 
