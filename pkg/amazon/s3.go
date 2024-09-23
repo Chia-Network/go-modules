@@ -61,21 +61,26 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	if err != nil {
 		return fmt.Errorf("error opening file: %w", err)
 	}
-	defer func() {
-		err := file.Close()
+
+	// Get file and total file size
+	fileInfo, err := file.Stat()
+	if err != nil {
+		err = file.Close()
 		if err != nil {
 			if input.Logger != nil {
 				input.Logger.Error("encountered error closing file", "path", input.Filepath)
 			}
 		}
-	}()
-
-	// Get file and total file size
-	fileInfo, err := file.Stat()
-	if err != nil {
 		return fmt.Errorf("error getting file info: %w", err)
 	}
 	fileSize := fileInfo.Size()
+
+	err = file.Close()
+	if err != nil {
+		if input.Logger != nil {
+			input.Logger.Error("encountered error closing file", "path", input.Filepath)
+		}
+	}
 
 	// Initialize a multipart upload and get an upload ID back
 	multipartUpload, err := input.Svc.CreateMultipartUploadWithContext(ctx, &s3.CreateMultipartUploadInput{
@@ -126,7 +131,19 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			}()
 			defer wg.Done()
 
-			partReader := io.NewSectionReader(file, offset, bytesToRead)
+			goFile, err := os.Open(input.Filepath)
+			if err != nil {
+				ch <- fmt.Errorf("error opening file: %w", err)
+				return
+			}
+			defer func() {
+				err := file.Close()
+				if err != nil {
+					ch <- fmt.Errorf("error closing file: %w", err)
+					return
+				}
+			}()
+			partReader := io.NewSectionReader(goFile, offset, bytesToRead)
 
 			if input.Logger != nil {
 				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", bytesToRead)
