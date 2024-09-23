@@ -138,7 +138,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 				return
 			}
 			defer func() {
-				err := file.Close()
+				err := goFile.Close()
 				if err != nil {
 					ch <- fmt.Errorf("error closing file: %w", err)
 					return
