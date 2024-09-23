@@ -100,8 +100,9 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 
 	// Get the total number of parts we will upload
 	numParts := getTotalNumberParts(fileSize, input.PartSize)
+	partSize := getPartSize(fileSize, numParts, input.PartSize)
 	if input.Logger != nil {
-		input.Logger.Debug("will upload file in parts", "file", input.Filepath, "parts", numParts)
+		input.Logger.Debug("will upload file in parts", "file", input.Filepath, "parts", numParts, "partSize", partSize, "fileSize", fileSize)
 	}
 
 	var (
@@ -114,8 +115,8 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 	orderedParts := make([]*s3.CompletedPart, numParts)
 	for i := int64(0); i < numParts; i++ {
 		partNumber := i + 1
-		offset := i * input.PartSize
-		bytesToRead := min(input.PartSize, fileSize-offset)
+		offset := i * partSize
+		bytesToRead := min(partSize, fileSize-offset)
 
 		wg.Add(1)
 		go func(partNumber int64, bytesToRead int64, offset int64) {
@@ -192,7 +193,18 @@ func min(a, b int64) int64 {
 
 func getTotalNumberParts(filesize int64, partsize int64) int64 {
 	if filesize%partsize == 0 {
-		return filesize / partsize
+		return min(10000, filesize/partsize)
 	}
-	return filesize/partsize + 1
+	return min(10000, filesize/partsize+1)
+}
+
+func getPartSize(filesize int64, numParts int64, defaultPartSize int64) int64 {
+	if numParts < 10000 {
+		return defaultPartSize
+	}
+	if filesize%numParts == 0 {
+		return filesize / numParts
+	}
+	// numParts-1 to account for any rounding (makes the parts slightly larger)
+	return filesize / (numParts - 1)
 }
