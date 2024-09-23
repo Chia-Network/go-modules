@@ -128,7 +128,7 @@ func MultiPartUpload(input MultiPartUploadInput) error {
 			partReader := io.NewSectionReader(file, offset, bytesToRead)
 
 			if input.Logger != nil {
-				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", len(partBuffer))
+				input.Logger.Debug("uploading file part", "file", input.Filepath, "part", partNumber, "size", bytesToRead)
 			}
 
 			resp, err := input.Svc.UploadPart(&s3.UploadPartInput{
