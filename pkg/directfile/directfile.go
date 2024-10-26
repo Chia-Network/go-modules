@@ -27,6 +27,11 @@ func openNodirect(path string) (*DirectFile, error) {
 	return &DirectFile{file: file, Direct: false}, nil
 }
 
+// Close closes the file
+func (df *DirectFile) Close() error {
+	return df.file.Close()
+}
+
 // Read satisfies the io.Reader
 func (df *DirectFile) Read(p []byte) (n int, err error) {
 	blockSize := int(df.blockSize)
