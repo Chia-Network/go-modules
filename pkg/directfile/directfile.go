@@ -31,11 +31,18 @@ func openNodirect(path string) (*DirectFile, error) {
 
 // Close closes the file
 func (df *DirectFile) Close() error {
-	return df.file.Close()
+	if df.file != nil {
+		return df.file.Close()
+	}
+
+	return nil
 }
 
 // Read satisfies the io.Reader
 func (df *DirectFile) Read(p []byte) (n int, err error) {
+	if !df.Direct {
+		return df.file.Read(p)
+	}
 	blockSize := int(df.blockSize)
 
 	// Ensure buffer length is aligned with BlockSize for O_DIRECT
@@ -52,7 +59,7 @@ func (df *DirectFile) Read(p []byte) (n int, err error) {
 
 	req := len(p)
 	act := len(buf)
-	percent := act/req * 100
+	percent := act / req * 100
 	safeLog("Read into aligned buffer", "requested", req, "reading", act, "percentage of requested", percent)
 
 	// Perform the read
@@ -66,6 +73,9 @@ func (df *DirectFile) Read(p []byte) (n int, err error) {
 
 // ReadAt satisfies the io.ReaderAt interface
 func (df *DirectFile) ReadAt(p []byte, off int64) (n int, err error) {
+	if !df.Direct {
+		return df.file.ReadAt(p, off)
+	}
 	blockSize := int(df.blockSize)
 	// Calculate aligned offset by rounding down to the nearest BlockSize boundary
 	// Integer division in go always discards remainder
@@ -86,7 +96,7 @@ func (df *DirectFile) ReadAt(p []byte, off int64) (n int, err error) {
 
 	req := len(p)
 	act := len(buf)
-	percent := act/req * 100
+	percent := act / req * 100
 	safeLog("ReadAt into aligned buffer", "requested", req, "reading", act, "percentage of requested", percent)
 
 	// Perform the read at the aligned offset
