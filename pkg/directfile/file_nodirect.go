@@ -12,7 +12,7 @@ func OpenFileWithODirect(path string, blockSize uint32) (*DirectFile, error) {
 	return openNodirect(path)
 }
 
-// OpenFileFADV_DONTNEED opens file with FADV_DONTNEED
+// OpenFileFADVDONTNEED opens file with FADV_DONTNEED
 func OpenFileFADVDONTNEED(path string) (*os.File, error) {
 	return os.Open(path)
 }

@@ -28,7 +28,7 @@ func OpenFileWithODirect(path string, blockSize uint32) (*DirectFile, error) {
 	return &DirectFile{file: file, blockSize: blockSize, Direct: true}, nil
 }
 
-// OpenFileFADV_DONTNEED opens file with FADV_DONTNEED
+// OpenFileFADVDONTNEED opens file with FADV_DONTNEED
 func OpenFileFADVDONTNEED(path string) (*os.File, error) {
 	// Open the file
 	file, err := os.Open(path)
