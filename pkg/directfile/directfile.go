@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/chia-network/go-modules/pkg/slogs"
 )
 
 // DirectFile is a wrapper around os.File that ensures aligned reads for O_DIRECT support,
@@ -48,6 +50,11 @@ func (df *DirectFile) Read(p []byte) (n int, err error) {
 		return 0, fmt.Errorf("failed to create aligned buffer: %w", err)
 	}
 
+	req := len(p)
+	act := len(buf)
+	percent := act/req * 100
+	safeLog("Read into aligned buffer", "requested", req, "reading", act, "percentage of requested", percent)
+
 	// Perform the read
 	n, err = df.file.Read(buf)
 	if n > len(p) {
@@ -77,6 +84,11 @@ func (df *DirectFile) ReadAt(p []byte, off int64) (n int, err error) {
 		return 0, fmt.Errorf("failed to create aligned buffer: %w", err)
 	}
 
+	req := len(p)
+	act := len(buf)
+	percent := act/req * 100
+	safeLog("ReadAt into aligned buffer", "requested", req, "reading", act, "percentage of requested", percent)
+
 	// Perform the read at the aligned offset
 	n, err = df.file.ReadAt(buf, int64(alignedOffset))
 	if err != nil && err != io.EOF {
@@ -94,4 +106,10 @@ func (df *DirectFile) ReadAt(p []byte, off int64) (n int, err error) {
 	// Copy the relevant part of the buffer to p
 	copy(p, buf[offsetDiff:offsetDiff+copyLen])
 	return copyLen, nil
+}
+
+func safeLog(msg string, args ...any) {
+	if slogs.Logr.Logger != nil {
+		slogs.Logr.Debug(msg, args...)
+	}
 }
