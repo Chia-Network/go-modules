@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // OpenFileWithODirect Opens a file without system cache (DIRECT)
@@ -40,7 +42,7 @@ func OpenFileFADV_DONTNEED(path string) (*os.File, error) {
 	// Use FADV_DONTNEED to suggest not caching pages
 	err = unix.Fadvise(fd, 0, 0, unix.FADV_DONTNEED)
 	if err != nil {
-		return nil, fmt.Println("Error setting FADV_DONTNEED:", err)
+		return nil, fmt.Errorf("error setting FADV_DONTNEED: %w", err)
 	}
 
 	return file, nil
