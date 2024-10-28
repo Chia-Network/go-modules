@@ -40,7 +40,8 @@ func OpenFileFADV_DONTNEED(path string) (*os.File, error) {
 	// Use FADV_DONTNEED to suggest not caching pages
 	err = unix.Fadvise(fd, 0, 0, unix.FADV_DONTNEED)
 	if err != nil {
-		fmt.Println("Error setting FADV_DONTNEED:", err)
-		return
+		return nil, fmt.Println("Error setting FADV_DONTNEED:", err)
 	}
+
+	return file, nil
 }
