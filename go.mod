@@ -1,6 +1,8 @@
 module github.com/chia-network/go-modules
 
-go 1.19
+go 1.21
+
+toolchain go1.23.2
 
 require (
 	github.com/aws/aws-sdk-go v1.55.6
