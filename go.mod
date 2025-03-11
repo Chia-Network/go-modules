@@ -1,7 +1,6 @@
 module github.com/chia-network/go-modules
 
 go 1.21
-
 toolchain go1.23.2
 
 require (
@@ -9,7 +8,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.30
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.21.1
-	golang.org/x/sys v0.30.0
+	golang.org/x/sys v0.31.0
 )
 
 require (
