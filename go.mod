@@ -8,8 +8,8 @@ require (
 	github.com/aws/aws-sdk-go v1.55.6
 	github.com/lestrrat-go/jwx v1.2.30
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.21.1
-	golang.org/x/sys v0.31.0
+	github.com/prometheus/client_golang v1.22.0
+	golang.org/x/sys v0.32.0
 )
 
 require (
@@ -28,5 +28,5 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	google.golang.org/protobuf v1.36.1 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 )
