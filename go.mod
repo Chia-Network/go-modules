@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.0
 
 require (
-	github.com/aws/aws-sdk-go v1.55.6
+	github.com/aws/aws-sdk-go v1.55.7
 	github.com/lestrrat-go/jwx v1.2.31
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.22.0
