@@ -17,7 +17,7 @@ type Logger struct {
 
 // InitOptions contain options for the slog logger
 type InitOptions struct {
-	AddSource *bool
+	AddSource bool
 }
 
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
@@ -26,8 +26,8 @@ func Init(level string, opts *InitOptions) {
 		Level: parseLogLevel(level),
 	}
 
-	if opts != nil && opts.AddSource != nil {
-		handlerOpts.AddSource = *opts.AddSource
+	if opts != nil && opts.AddSource {
+		handlerOpts.AddSource = opts.AddSource
 	}
 
 	l := slog.New(

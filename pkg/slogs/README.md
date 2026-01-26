@@ -14,7 +14,8 @@ import "github.com/chia-network/go-modules/pkg/slogs"
 func main() {
 	// Init the logger with a log-level string (debug, info, warn, error)
 	// defaults to "info" if empty or unsupported string 
-	slogs.Init("info")
+	// not passing any logger options
+	slogs.Init("info", nil)
 	
 	// Logs a hello world message at the info level
 	slogs.Logr.Info("hello world")
@@ -43,7 +44,7 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// Init logger
-		slogs.Init(viper.GetString("log-level"))
+		slogs.Init(viper.GetString("log-level"), nil)
 
 		// Application logic below
 	},
@@ -61,3 +62,16 @@ func init() {
 	}
 }
 ```
+
+### Logger Options
+
+You can pass some options to the logger via the second argument to Init:
+
+```go
+opts := slogs.InitOptions{
+    AddSource: true,
+}
+slogs.Init("info", &opts)
+```
+
+* AddSource -- when set to `true` all logs will mention the caller to the logger within the logline
