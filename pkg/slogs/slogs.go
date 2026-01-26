@@ -15,14 +15,25 @@ type Logger struct {
 	*slog.Logger
 }
 
+// InitOptions contain options for the slog logger
+type InitOptions struct {
+	AddSource *bool
+}
+
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
-func Init(level string) {
+func Init(level string, opts *InitOptions) {
+	handlerOpts := slog.HandlerOptions{
+		Level: parseLogLevel(level),
+	}
+
+	if opts != nil && opts.AddSource != nil {
+		handlerOpts.AddSource = *opts.AddSource
+	}
+
 	l := slog.New(
 		slog.NewTextHandler(
 			os.Stdout,
-			&slog.HandlerOptions{
-				Level: parseLogLevel(level),
-			},
+			&handlerOpts,
 		),
 	)
 	Logr = Logger{l}
