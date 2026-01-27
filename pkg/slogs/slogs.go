@@ -42,35 +42,53 @@ func Init(level string, opts *InitOptions) {
 	}
 }
 
+// Debug uses the initialized logger at Debug level
 func (l Logger) Debug(msg string, args ...any) {
 	l.log(context.Background(), slog.LevelDebug, msg, args...)
 }
+
+// Info uses the initialized logger at Info level
 func (l Logger) Info(msg string, args ...any) {
 	l.log(context.Background(), slog.LevelInfo, msg, args...)
 }
+
+// Warn uses the initialized logger at Warn level
 func (l Logger) Warn(msg string, args ...any) {
 	l.log(context.Background(), slog.LevelWarn, msg, args...)
 }
+
+// Error uses the initialized logger at Error level
 func (l Logger) Error(msg string, args ...any) {
 	l.log(context.Background(), slog.LevelError, msg, args...)
 }
+
+// Fatal uses the initialized logger at Error level, and exits 1
 func (l Logger) Fatal(msg string, args ...any) {
 	l.log(context.Background(), slog.LevelError, msg, args...)
 	os.Exit(1)
 }
 
+// DebugContext uses the initialized logger at Debug level with a given context
 func (l Logger) DebugContext(ctx context.Context, msg string, args ...any) {
 	l.log(ctx, slog.LevelDebug, msg, args...)
 }
+
+// InfoContext uses the initialized logger at Info level with a given context
 func (l Logger) InfoContext(ctx context.Context, msg string, args ...any) {
 	l.log(ctx, slog.LevelInfo, msg, args...)
 }
+
+// WarnContext uses the initialized logger at Warn level with a given context
 func (l Logger) WarnContext(ctx context.Context, msg string, args ...any) {
 	l.log(ctx, slog.LevelWarn, msg, args...)
 }
+
+// ErrorContext uses the initialized logger at Error level with a given context
 func (l Logger) ErrorContext(ctx context.Context, msg string, args ...any) {
 	l.log(ctx, slog.LevelError, msg, args...)
 }
+
+// FatalContext uses the initialized logger at Error level with a given context, and exits 1
 func (l Logger) FatalContext(ctx context.Context, msg string, args ...any) {
 	l.log(ctx, slog.LevelError, msg, args...)
 	os.Exit(1)
@@ -90,29 +108,41 @@ func (l Logger) With(args ...any) Logger {
 func (l Logger) Handler() slog.Handler { return l.h }
 
 func (l Logger) log(ctx context.Context, level slog.Level, msg string, args ...any) {
+	// This retrieves the actual caller of the logger out of the call-stack.
+	// When using slogs in any kind of wrapper context with the AddSource option, the logger's caller is hidden a few layers in the call stack
 	// 0 runtime.Callers
 	// 1 Logger.log
-	// 2 Logger.Info/Debug/...
-	// 3 user callsite  <-- we want this one
+	// 2 Logger.[logger function]/...
+	// 3 user callsite  <-- want this one
 	var pcs [1]uintptr
 	runtime.Callers(3, pcs[:])
 
 	rec := slog.NewRecord(time.Now(), level, msg, pcs[0])
 	rec.Add(args...)
 
-	_ = l.h.Handle(ctx, rec)
+	err := l.h.Handle(ctx, rec)
+	if err != nil {
+		log.Printf("slogs internal error: failed to handle record: %v", err)
+	}
 }
 
 func slogArgsToAttrs(args ...any) []slog.Attr {
+	if len(args)%2 != 0 {
+		// Drops the last odd element
+		log.Printf("slogs internal error: incorrect number of attributes given to log, should be even in key=value format: %d attributes", len(args))
+		args = args[:len(args)-1]
+	}
+
 	// Convert the keyvals into Attrs the same way slog does.
 	// slog.Any() is fine for values; keys must be strings.
 	attrs := make([]slog.Attr, 0, len(args)/2)
 	for i := 0; i+1 < len(args); i += 2 {
 		k, ok := args[i].(string)
 		if !ok {
-			// mirror slog's behavior-ish: skip bad key
+			// skip if arg can't cast to string
 			continue
 		}
+		// Append this key and the value is the next element in the args slice
 		attrs = append(attrs, slog.Any(k, args[i+1]))
 	}
 	return attrs
