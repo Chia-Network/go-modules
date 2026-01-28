@@ -14,11 +14,12 @@ import "github.com/chia-network/go-modules/pkg/slogs"
 func main() {
 	// Init the logger with a log-level string (debug, info, warn, error)
 	// defaults to "info" if empty or unsupported string 
+	// not passing any logger options
 	slogs.Init("info")
-	
+
 	// Logs a hello world message at the info level
 	slogs.Logr.Info("hello world")
-	
+
 	// Logs an error message at the error level 
 	slogs.Logr.Error("we received an error")
 }
@@ -61,3 +62,23 @@ func init() {
 	}
 }
 ```
+
+### Logger Options
+
+#### Source contexts
+
+Source context tells you the position in your code that created a log line. This is disabled by default, but can be enabled when initializing this package as follows:
+
+```go
+slogs.Init("info", slogs.WithSourceContext(true))
+```
+
+#### Writer
+
+The default logger's writer sends logs to stdout. you can change this when initializing this package as follows:
+
+```go
+slogs.Init("info", slogs.WithWriter(io.Discard))
+```
+
+This example uses `io.Discard` which sends logs to `/dev/null` but any other interface that implements the standard Write method will work, such as `os.Stderr`.
