@@ -2,6 +2,7 @@ package slogs
 
 import (
 	"context"
+	"io"
 	"log"
 	"log/slog"
 	"os"
@@ -13,42 +14,63 @@ import (
 // Logr is a custom text logger from the stdlib slog package
 var Logr Logger
 
-// Logger is a wrapper around slog that can adjust call depth for AddSource
+// Logger is a wrapper around a slog log handler
 type Logger struct {
 	h slog.Handler
+}
 
+type loggerOptions struct {
+	// logLevel is the designated logging level of the slog logger
+	logLevel slog.Level
+	// handlerOptions are the options passed to the slog handler
 	handlerOptions slog.HandlerOptions
+	// writer is any interface that implements an I/O Writer
+	writer io.Writer
 }
 
 // ClientOptionFunc can be used to customize a new slogs client
-type ClientOptionFunc func(*Logger)
+type ClientOptionFunc func(*loggerOptions)
 
 // WithSourceContext sets the AddSource option for the slogs logger, which adds the location in the code that called the logger, to each logline
 func WithSourceContext(set bool) ClientOptionFunc {
-	return func(l *Logger) {
-		l.setAddSource(set)
+	return func(o *loggerOptions) {
+		o.setAddSource(set)
 	}
 }
 
 // setAddSource sets the AddSource option on a logger
-func (l *Logger) setAddSource(set bool) {
-	l.handlerOptions.AddSource = set
+func (o *loggerOptions) setAddSource(set bool) {
+	o.handlerOptions.AddSource = set
+}
+
+// WithWriter sets a given io.Writer to be the receiver for slogs logs
+func WithWriter(w io.Writer) ClientOptionFunc {
+	return func(o *loggerOptions) {
+		o.setWriter(w)
+	}
+}
+
+// setWriter sets the specified io.Writer on the Logger
+func (o *loggerOptions) setWriter(w io.Writer) {
+	o.writer = w
 }
 
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
 func Init(level string, options ...ClientOptionFunc) {
-	Logr.handlerOptions = slog.HandlerOptions{}
-	Logr.handlerOptions.Level = parseLogLevel(level)
+	logOpts := loggerOptions{
+		logLevel: parseLogLevel(level),
+		writer:   os.Stdout,
+	}
 
 	// Apply any given options
 	for _, fn := range options {
 		if fn == nil {
 			continue
 		}
-		fn(&Logr)
+		fn(&logOpts)
 	}
 
-	Logr.h = slog.NewTextHandler(os.Stdout, &Logr.handlerOptions)
+	Logr.h = slog.NewTextHandler(logOpts.writer, &logOpts.handlerOptions)
 }
 
 // Debug uses the initialized logger at Debug level
@@ -102,9 +124,6 @@ func (l Logger) FatalContext(ctx context.Context, msg string, args ...any) {
 	l.log(ctx, slog.LevelError, msg, args...)
 	os.Exit(1)
 }
-
-// Handler exposes the underlying handler (optional convenience).
-func (l Logger) Handler() slog.Handler { return l.h }
 
 func (l Logger) log(ctx context.Context, level slog.Level, msg string, args ...any) {
 	// This retrieves the actual caller of the logger out of the call-stack.
