@@ -37,6 +37,7 @@ func (l *Logger) setAddSource(set bool) {
 
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
 func Init(level string, options ...ClientOptionFunc) {
+	Logr.handlerOptions = slog.HandlerOptions{}
 	Logr.handlerOptions.Level = parseLogLevel(level)
 
 	// Apply any given options
