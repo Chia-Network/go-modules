@@ -47,11 +47,7 @@ func Init(level string, options ...ClientOptionFunc) {
 		fn(&Logr)
 	}
 
-	h := slog.NewTextHandler(os.Stdout, &Logr.handlerOptions)
-
-	Logr = Logger{
-		h: h,
-	}
+	Logr.h = slog.NewTextHandler(os.Stdout, &Logr.handlerOptions)
 }
 
 // Debug uses the initialized logger at Debug level
