@@ -34,25 +34,15 @@ type ClientOptionFunc func(*loggerOptions)
 // WithSourceContext sets the AddSource option for the slogs logger, which adds the location in the code that called the logger, to each logline
 func WithSourceContext(set bool) ClientOptionFunc {
 	return func(o *loggerOptions) {
-		o.setAddSource(set)
+		o.handlerOptions.AddSource = set
 	}
-}
-
-// setAddSource sets the AddSource option on a logger
-func (o *loggerOptions) setAddSource(set bool) {
-	o.handlerOptions.AddSource = set
 }
 
 // WithWriter sets a given io.Writer to be the receiver for slogs logs
 func WithWriter(w io.Writer) ClientOptionFunc {
 	return func(o *loggerOptions) {
-		o.setWriter(w)
+		o.writer = w
 	}
-}
-
-// setWriter sets the specified io.Writer on the Logger
-func (o *loggerOptions) setWriter(w io.Writer) {
-	o.writer = w
 }
 
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
