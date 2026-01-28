@@ -17,23 +17,38 @@ var Logr Logger
 type Logger struct {
 	base *slog.Logger
 	h    slog.Handler
+
+	handlerOptions slog.HandlerOptions
 }
 
-// InitOptions contain options for the slog logger
-type InitOptions struct {
-	AddSource bool
+// ClientOptionFunc can be used to customize a new slogs client
+type ClientOptionFunc func(*Logger)
+
+// WithSourceContext sets the AddSource option for the slogs logger, which adds the location in the code that called the logger, to each logline
+func WithSourceContext(set bool) ClientOptionFunc {
+	return func(l *Logger) {
+		l.setAddSource(set)
+	}
+}
+
+// setAddSource sets the AddSource option on a logger
+func (l *Logger) setAddSource(set bool) {
+	l.handlerOptions.AddSource = set
 }
 
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
-func Init(level string, opts *InitOptions) {
-	handlerOpts := slog.HandlerOptions{
-		Level: parseLogLevel(level),
-	}
-	if opts != nil && opts.AddSource {
-		handlerOpts.AddSource = true
+func Init(level string, options ...ClientOptionFunc) {
+	Logr.handlerOptions.Level = parseLogLevel(level)
+
+	// Apply any given options
+	for _, fn := range options {
+		if fn == nil {
+			continue
+		}
+		fn(&Logr)
 	}
 
-	h := slog.NewTextHandler(os.Stdout, &handlerOpts)
+	h := slog.NewTextHandler(os.Stdout, &Logr.handlerOptions)
 	l := slog.New(h)
 
 	Logr = Logger{
