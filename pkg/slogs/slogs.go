@@ -2,6 +2,7 @@ package slogs
 
 import (
 	"context"
+	"io"
 	"log"
 	"log/slog"
 	"os"
@@ -48,7 +49,7 @@ func Init(level string, options ...ClientOptionFunc) {
 		fn(&Logr)
 	}
 
-	h := slog.NewTextHandler(os.Stdout, &Logr.handlerOptions)
+	h := slog.NewTextHandler(io.Discard, &Logr.handlerOptions)
 	l := slog.New(h)
 
 	Logr = Logger{
