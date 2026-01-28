@@ -16,7 +16,8 @@ var Logr Logger
 
 // Logger is a wrapper around a slog log handler
 type Logger struct {
-	h slog.Handler
+	h                slog.Handler
+	addSourceContext bool
 }
 
 type loggerOptions struct {
@@ -59,6 +60,7 @@ func Init(level string, options ...ClientOptionFunc) {
 	}
 
 	Logr.h = slog.NewTextHandler(logOpts.writer, &logOpts.handlerOptions)
+	Logr.addSourceContext = logOpts.handlerOptions.AddSource
 }
 
 // Debug uses the initialized logger at Debug level
@@ -121,16 +123,16 @@ func (l Logger) log(ctx context.Context, level slog.Level, msg string, args ...a
 		return
 	}
 
-	// This retrieves the actual caller of the logger out of the call-stack.
-	// When using slogs in any kind of wrapper context with the AddSource option, the logger's caller is hidden a few layers in the call stack
-	// 0 runtime.Callers
-	// 1 Logger.log
-	// 2 Logger.[logger function]/...
-	// 3 user callsite  <-- want this one
-	var pcs [1]uintptr
-	runtime.Callers(3, pcs[:])
+	var pc uintptr
+	if l.addSourceContext {
+		// skips runtime.Callers, this log function, the log level function wrapper, to the caller of that function.
+		// This is for adding the correct source caller to the log's record
+		var pcs [1]uintptr
+		runtime.Callers(3, pcs[:])
+		pc = pcs[0]
+	}
 
-	rec := slog.NewRecord(time.Now(), level, msg, pcs[0])
+	rec := slog.NewRecord(time.Now(), level, msg, pc)
 	rec.Add(args...)
 	err := l.h.Handle(ctx, rec)
 	if err != nil {
