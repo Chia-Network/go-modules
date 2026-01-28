@@ -114,6 +114,13 @@ func (l Logger) FatalContext(ctx context.Context, msg string, args ...any) {
 }
 
 func (l Logger) log(ctx context.Context, level slog.Level, msg string, args ...any) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if !l.h.Enabled(ctx, level) {
+		return
+	}
+
 	// This retrieves the actual caller of the logger out of the call-stack.
 	// When using slogs in any kind of wrapper context with the AddSource option, the logger's caller is hidden a few layers in the call stack
 	// 0 runtime.Callers
@@ -125,7 +132,6 @@ func (l Logger) log(ctx context.Context, level slog.Level, msg string, args ...a
 
 	rec := slog.NewRecord(time.Now(), level, msg, pcs[0])
 	rec.Add(args...)
-
 	err := l.h.Handle(ctx, rec)
 	if err != nil {
 		log.Printf("slogs internal error: failed to handle record: %v", err)
