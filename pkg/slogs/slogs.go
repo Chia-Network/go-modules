@@ -20,12 +20,10 @@ type Logger struct {
 }
 
 type loggerOptions struct {
-	// logLevel is the designated logging level of the slog logger
-	logLevel slog.Level
-	// handlerOptions are the options passed to the slog handler
-	handlerOptions slog.HandlerOptions
 	// writer is any interface that implements an I/O Writer
 	writer io.Writer
+	// handlerOptions are the options passed to the slog handler
+	handlerOptions slog.HandlerOptions
 }
 
 // ClientOptionFunc can be used to customize a new slogs client
@@ -48,9 +46,9 @@ func WithWriter(w io.Writer) ClientOptionFunc {
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
 func Init(level string, options ...ClientOptionFunc) {
 	logOpts := loggerOptions{
-		logLevel: parseLogLevel(level),
-		writer:   os.Stdout,
+		writer: os.Stdout,
 	}
+	logOpts.handlerOptions.Level = parseLogLevel(level)
 
 	// Apply any given options
 	for _, fn := range options {
