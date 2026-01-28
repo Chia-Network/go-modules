@@ -15,11 +15,11 @@ func main() {
 	// Init the logger with a log-level string (debug, info, warn, error)
 	// defaults to "info" if empty or unsupported string 
 	// not passing any logger options
-	slogs.Init("info", nil)
-	
+	slogs.Init("info")
+
 	// Logs a hello world message at the info level
 	slogs.Logr.Info("hello world")
-	
+
 	// Logs an error message at the error level 
 	slogs.Logr.Error("we received an error")
 }
@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// Init logger
-		slogs.Init(viper.GetString("log-level"), nil)
+		slogs.Init(viper.GetString("log-level"))
 
 		// Application logic below
 	},
@@ -68,10 +68,7 @@ func init() {
 You can pass some options to the logger via the second argument to Init:
 
 ```go
-opts := slogs.InitOptions{
-    AddSource: true,
-}
-slogs.Init("info", &opts)
+slogs.Init("info", slogs.WithSourceContext(true))
 ```
 
-* AddSource -- when set to `true` all logs will mention the caller to the logger within the logline
+* AddSource -- when set to `true` all logs will mention the caller (the position in the code) to the logger within the logline
