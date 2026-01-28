@@ -15,8 +15,7 @@ var Logr Logger
 
 // Logger is a wrapper around slog that can adjust call depth for AddSource
 type Logger struct {
-	base *slog.Logger
-	h    slog.Handler
+	h slog.Handler
 
 	handlerOptions slog.HandlerOptions
 }
@@ -49,11 +48,9 @@ func Init(level string, options ...ClientOptionFunc) {
 	}
 
 	h := slog.NewTextHandler(os.Stdout, &Logr.handlerOptions)
-	l := slog.New(h)
 
 	Logr = Logger{
-		base: l,
-		h:    h,
+		h: h,
 	}
 }
 
@@ -109,16 +106,6 @@ func (l Logger) FatalContext(ctx context.Context, msg string, args ...any) {
 	os.Exit(1)
 }
 
-// With returns a new logger with additional attributes.
-func (l Logger) With(args ...any) Logger {
-	// Preserve handler chain so Handle() keeps working.
-	h2 := l.h.WithAttrs(slogArgsToAttrs(args))
-	return Logger{
-		base: slog.New(h2),
-		h:    h2,
-	}
-}
-
 // Handler exposes the underlying handler (optional convenience).
 func (l Logger) Handler() slog.Handler { return l.h }
 
@@ -139,28 +126,6 @@ func (l Logger) log(ctx context.Context, level slog.Level, msg string, args ...a
 	if err != nil {
 		log.Printf("slogs internal error: failed to handle record: %v", err)
 	}
-}
-
-func slogArgsToAttrs(args ...any) []slog.Attr {
-	if len(args)%2 != 0 {
-		// Drops the last odd element
-		log.Printf("slogs internal error: incorrect number of attributes given to log, should be even in key=value format: %d attributes", len(args))
-		args = args[:len(args)-1]
-	}
-
-	// Convert the keyvals into Attrs the same way slog does.
-	// slog.Any() is fine for values; keys must be strings.
-	attrs := make([]slog.Attr, 0, len(args)/2)
-	for i := 0; i+1 < len(args); i += 2 {
-		k, ok := args[i].(string)
-		if !ok {
-			// skip if arg can't cast to string
-			continue
-		}
-		// Append this key and the value is the next element in the args slice
-		attrs = append(attrs, slog.Any(k, args[i+1]))
-	}
-	return attrs
 }
 
 // Function to convert log level string to slog.Level
