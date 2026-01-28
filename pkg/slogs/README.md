@@ -65,10 +65,20 @@ func init() {
 
 ### Logger Options
 
-You can pass some options to the logger via the second argument to Init:
+#### Source contexts
+
+Source context tells you the position in your code that created a log line. This is disabled by default, but can be enabled when initializing this package as follows:
 
 ```go
 slogs.Init("info", slogs.WithSourceContext(true))
 ```
 
-* AddSource -- when set to `true` all logs will mention the caller (the position in the code) to the logger within the logline
+#### Writer
+
+The default logger's writer sends logs to stdout. you can change this when initializing this package as follows:
+
+```go
+slogs.Init("info", slogs.WithWriter(io.Discard))
+```
+
+This example uses `io.Discard` which sends logs to `/dev/null` but any other interface that implements the standard Write method will work, such as `os.Stderr`.
