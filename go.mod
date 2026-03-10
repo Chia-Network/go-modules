@@ -1,12 +1,12 @@
 module github.com/chia-network/go-modules
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/lestrrat-go/jwx v1.2.31
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.23.2
-	golang.org/x/sys v0.41.0
+	golang.org/x/sys v0.42.0
 )
 
 require (
