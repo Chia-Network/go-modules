@@ -82,3 +82,11 @@ slogs.Init("info", slogs.WithWriter(io.Discard))
 ```
 
 This example uses `io.Discard` which sends logs to `/dev/null` but any other interface that implements the standard Write method will work, such as `os.Stderr`.
+
+#### JSON output
+
+The default logger outputs logs in text format. To output logs in JSON format instead, enable it when initializing:
+
+```go
+slogs.Init("info", slogs.WithJSONOutput())
+```

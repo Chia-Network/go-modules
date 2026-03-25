@@ -23,6 +23,8 @@ type Logger struct {
 type loggerOptions struct {
 	// writer is any interface that implements an I/O Writer
 	writer io.Writer
+	// jsonOutput enables JSON formatted log output instead of the default text format
+	jsonOutput bool
 	// handlerOptions are the options passed to the slog handler
 	handlerOptions slog.HandlerOptions
 }
@@ -44,6 +46,13 @@ func WithWriter(w io.Writer) ClientOptionFunc {
 	}
 }
 
+// WithJSONOutput enables JSON formatted log output instead of the default text format
+func WithJSONOutput() ClientOptionFunc {
+	return func(o *loggerOptions) {
+		o.jsonOutput = true
+	}
+}
+
 // Init custom init function that accepts the log level for the application and initializes a stdout slog logger
 func Init(level string, options ...ClientOptionFunc) {
 	logOpts := loggerOptions{
@@ -59,7 +68,11 @@ func Init(level string, options ...ClientOptionFunc) {
 		fn(&logOpts)
 	}
 
-	Logr.h = slog.NewTextHandler(logOpts.writer, &logOpts.handlerOptions)
+	if logOpts.jsonOutput {
+		Logr.h = slog.NewJSONHandler(logOpts.writer, &logOpts.handlerOptions)
+	} else {
+		Logr.h = slog.NewTextHandler(logOpts.writer, &logOpts.handlerOptions)
+	}
 	Logr.addSourceContext = logOpts.handlerOptions.AddSource
 }
 
